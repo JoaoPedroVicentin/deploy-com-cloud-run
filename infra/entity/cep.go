@@ -2,12 +2,19 @@ package entity
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/JoaoPedroVicentin/deploy-com-cloud-run/infra/dto"
+)
+
+var (
+	ErrorInvalidCep = errors.New("invalid zipcode")
+	ErrorNotFound   = errors.New("zipcode not found")
 )
 
 func GetCep(cep string) (data dto.Address, err error) {
@@ -25,10 +32,15 @@ func GetCep(cep string) (data dto.Address, err error) {
 		return data, err
 	}
 
+	if strings.Contains(string(body), "erro") {
+		log.Println("CEP não encontrado:", cep)
+		return data, ErrorNotFound
+	}
+
 	var dataViaCep dto.ViaCep
 	if err := json.Unmarshal(body, &dataViaCep); err != nil {
 		log.Println("Erro ao decodificar ViaCEP:", err)
-		return data, err
+		return data, ErrorInvalidCep
 	}
 
 	return dto.Address{
@@ -41,7 +53,10 @@ func GetCep(cep string) (data dto.Address, err error) {
 	}, nil
 }
 
-func IsValidCep(cep string) bool {
+func IsValidCep(cep string) error {
 	regex := regexp.MustCompile(`^\d{5}-?\d{3}$`)
-	return regex.MatchString(cep)
+	if !regex.MatchString(cep) {
+		return ErrorInvalidCep
+	}
+	return nil
 }

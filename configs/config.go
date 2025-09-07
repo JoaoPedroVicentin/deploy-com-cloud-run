@@ -1,6 +1,9 @@
 package configs
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/spf13/viper"
 )
 
@@ -10,19 +13,26 @@ type conf struct {
 	ApiKey string `mapstructure:"API_KEY"`
 }
 
-func LoadConfig(path string) (*conf, error) {
-	viper.SetConfigName("app_config")
-	viper.SetConfigType("env")
-	viper.AddConfigPath(path)
-	viper.SetConfigFile(".env")
-	viper.AutomaticEnv()
-	err := viper.ReadInConfig()
+func LoadConfig() (*conf, error) {
+	rootDir, err := os.Getwd()
 	if err != nil {
 		panic(err)
 	}
+
+	envPath := filepath.Join(rootDir, "../..", ".env")
+
+	viper.SetConfigFile(envPath)
+	viper.AutomaticEnv()
+
+	err = viper.ReadInConfig()
+	if err != nil {
+		panic(err)
+	}
+
 	err = viper.Unmarshal(&cfg)
 	if err != nil {
 		panic(err)
 	}
+
 	return cfg, err
 }

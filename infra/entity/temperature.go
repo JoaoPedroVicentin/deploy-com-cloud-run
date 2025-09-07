@@ -2,19 +2,26 @@ package entity
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 
+	"github.com/JoaoPedroVicentin/deploy-com-cloud-run/configs"
 	"github.com/JoaoPedroVicentin/deploy-com-cloud-run/infra/dto"
 )
 
-func GetLocationTemperature(location string, apyKey string) (temp dto.Temperature, err error) {
+var (
+	ErrorCannotFindTemperature = "cannot find temperature for this location: %s"
+)
 
-	weatherData, err := getWeatherApi(location, apyKey)
+func GetLocationTemperature(location string) (temp dto.Temperature, err error) {
+
+	weatherData, err := getWeatherApi(location)
 	if err != nil {
 		log.Println("Erro ao buscar temperatura:", err)
-		return temp, err
+		return temp, fmt.Errorf(ErrorCannotFindTemperature, location)
 	}
 
 	return dto.Temperature{
@@ -24,16 +31,28 @@ func GetLocationTemperature(location string, apyKey string) (temp dto.Temperatur
 	}, nil
 }
 
-func getWeatherApi(city string, apiKey string) (data dto.WeatherData, err error) {
+func getWeatherApi(city string) (data dto.WeatherData, err error) {
 
-	url := "http://api.weatherapi.com/v1/current.json?key=" + apiKey + "&q=" + city + "&aqi=no"
+	configs, err := configs.LoadConfig()
+	if err != nil {
+		panic(err)
+	}
 
-	res, err := http.Get(url)
+	locationEncode := url.QueryEscape(city)
+
+	endpoint := fmt.Sprintf("http://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no", configs.ApiKey, locationEncode)
+
+	res, err := http.Get(endpoint)
 	if err != nil {
 		log.Println("Erro WeatherApi:", err)
 		return data, err
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		log.Printf("Erro na resposta da API: status code %d", res.StatusCode)
+		return data, fmt.Errorf("erro da API: status code %d", res.StatusCode)
+	}
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
