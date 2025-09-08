@@ -1,38 +1,21 @@
 package configs
 
 import (
+	"fmt"
 	"os"
-	"path/filepath"
-
-	"github.com/spf13/viper"
 )
 
-var cfg *conf
-
-type conf struct {
-	ApiKey string `mapstructure:"API_KEY"`
+type Config struct {
+	ApiKey string
 }
 
-func LoadConfig() (*conf, error) {
-	rootDir, err := os.Getwd()
-	if err != nil {
-		panic(err)
+func LoadConfig() (*Config, error) {
+	apiKey := os.Getenv("API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("API_KEY não configurada")
 	}
 
-	envPath := filepath.Join(rootDir, "../..", ".env")
-
-	viper.SetConfigFile(envPath)
-	viper.AutomaticEnv()
-
-	err = viper.ReadInConfig()
-	if err != nil {
-		panic(err)
-	}
-
-	err = viper.Unmarshal(&cfg)
-	if err != nil {
-		panic(err)
-	}
-
-	return cfg, err
+	return &Config{
+		ApiKey: apiKey,
+	}, nil
 }
