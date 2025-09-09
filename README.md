@@ -22,7 +22,7 @@ cd cmd/server
 go run main.go
 ```
 
-### 3. Acessando a API via Cloud Run acesse: https://deploy-com-cloud-run-44570442432.us-central1.run.app/{cep}
+### 3. Consultando a API via Cloud Run acesse: https://deploy-com-cloud-run-44570442432.us-central1.run.app/{cep}
 
 <div align="center">
 <h3>👨‍💻</h3>
